@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Aurigma.TestTask.Utilites;
+﻿using System.Collections.Generic;
 using FileServer.Extensions;
+using FileServer.Filters;
 using FileServer.Models;
 using FileServer.Services;
-using Microsoft.AspNetCore.Http;
+using FileServer.Utilites;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Net.Http.Headers;
 
@@ -28,18 +27,23 @@ namespace FileServer.Controllers
         {
             if (string.IsNullOrEmpty(file)) return BadRequest();
 
-            return File(storage.Get(file), "");
+            new FileExtensionContentTypeProvider()
+                .TryGetContentType(file, out var contetnType);
+
+            return File(storage.Get(file),
+                contetnType ?? "application/octet-stream");
         }
-        
+
         public IActionResult GetAll()
         {
             return Json(storage.GetAll());
         }
 
         [HttpPost]
+        [DisableFormValueModelBinding]
         public IActionResult Upload()
         {
-            if (MultipartRequestHelper
+            if (!MultipartRequestHelper
                 .IsMultipartContentType(Request.ContentType))
                 return BadRequest();
 
@@ -50,7 +54,7 @@ namespace FileServer.Controllers
                     defaultFormOptions.MultipartBoundaryLengthLimit);
 
             var reader = new MultipartReader(bondary, HttpContext.Request.Body);
-           
+
             var addedFiles = new List<FileModel>();
 
             foreach (var section in reader.ReadFileContent())
@@ -62,7 +66,7 @@ namespace FileServer.Controllers
 
                 addedFiles.Add(addedFile);
             }
-            
+
             return Json(addedFiles);
         }
 

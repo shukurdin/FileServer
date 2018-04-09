@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Net.Http.Headers;
 
-namespace Aurigma.TestTask.Utilites
+namespace FileServer.Utilites
 {
     // This method is similar to the example from Microsoft docs:
     // github.com/aspnet/Docs/blob/master/aspnetcore/
@@ -57,11 +57,13 @@ namespace Aurigma.TestTask.Utilites
 
         public static string ParseFileName(string contentDisposition)
         {
-            return contentDisposition.Split(';')
-                .SingleOrDefault(part => part.Equals("fileName"))
+            var fullPath = contentDisposition.Split(';')
+                .SingleOrDefault(part => part.Contains("filename"))
                 ?.Split('=')
                 .Last()
                 .Trim('"');
+
+            return Path.GetFileName(fullPath);
         }
     }
 }

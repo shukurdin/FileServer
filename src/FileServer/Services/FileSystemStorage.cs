@@ -23,16 +23,16 @@ namespace FileServer.Services
 
         public FileModel Add(string fileName, Stream stream)
         {
-            var filePath = GetFilePath(fileName);
+            var fullName = GetFullName(fileName);
 
-            if (File.Exists(filePath))
+            if (File.Exists(fullName))
                 throw new ArgumentException(
                     $"The file {fileName} already exists in the file storage.");
 
-            using (var fileStream = new FileStream(fileName, FileMode.Create))
+            using (var fileStream = new FileStream(fullName, FileMode.Create))
                 stream.CopyToAsync(fileStream);
 
-            var fileInfo = new FileInfo(directoryPath);
+            var fileInfo = new FileInfo(fullName);
 
             return new FileModel
             {
@@ -44,7 +44,7 @@ namespace FileServer.Services
 
         public Stream Get(string fileName)
         {
-            var filePath = GetFilePath(fileName);
+            var filePath = GetFullName(fileName);
 
             if (!File.Exists(filePath)) return null;
 
@@ -73,7 +73,7 @@ namespace FileServer.Services
 
         public FileModel Remove(string fileName)
         {
-            var filePath = GetFilePath(fileName);
+            var filePath = GetFullName(fileName);
 
             if (!File.Exists(filePath)) return null;
 
@@ -84,7 +84,7 @@ namespace FileServer.Services
             return new FileModel { Name = fileInfo.Name};
         }
 
-        string GetFilePath(string fileName)
+        string GetFullName(string fileName)
         {
             return Path.Combine(directoryPath, fileName);
         }

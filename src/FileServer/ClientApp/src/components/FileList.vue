@@ -18,41 +18,104 @@
                         <td>{{file.lastModifiedDate}}</td>
                         <td>{{file.lenght}}</td>
                         <td>
-                            <button class="btn btn-sm btn-primary">Открыть</button>
-                            <button class="btn btn-sm btn-danger" v-on:click="remove(file.name)">Удалить</button>
+                            <button class="btn btn-sm btn-primary"
+                                    v-on:click="open(file.name)">
+                                Открыть
+                            </button>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-danger"
+                                    v-on:click="remove(file.name)">
+                                Удалить
+                            </button>
                         </td>
                     </tr>
                 </tbody>
-
             </table>
         </div>
+        <modal name="file-view">
+            <div>
+                <h3>Hello</h3>
+                <img v-bind:src="image" v-show="image" />
+                <p v-show="text">{{text}}</p>
+            </div>
+        </modal>
     </div>
 </template>
 
 <script>
     import axios from 'axios';
+    import Dialog from './Dialog.vue';
 
     const API_PREFIX = '/api/files/';
-    
+
     export default {
         name: 'file-list',
-        data: () => ({
-            files: []
-        }),
+        data() {
+            return {
+                files: [],
+                image: '',
+                text: ''
+            }
+        },
         created() {
             this.getFiles();
         },
         methods: {
-            getFiles: function () {
+            open(fileName) {
+
+                var isImage = false;
+                if (/\.(jpe?g|png|gif)$/i.test(fileName)) {
+                    this.text = '';
+                    isImage = true;
+                }
+                else if (/\.txt$/i.test(fileName)) {
+                    this.image = '';
+                } else {
+                    return; // other files
+                }
+
+                axios.get(API_PREFIX + fileName, {
+                    responseType: 'blob'
+                })
+                    .then(response => {
+                        var reader = new FileReader();
+                        reader.addEventListener("load", function () {
+                            if (isImage) {
+                                this.image = reader.result;
+                            }
+                            else {
+                                this.text = reader.result;
+                            }
+                        }.bind(this), false);
+
+                        if (response.data != null) {
+                            if (isImage)
+                                reader.readAsDataURL(response.data);
+                            else
+                                reader.readAsText(response.data, "UTF-8");
+                        }
+
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
+
+                this.$modal.show('file-view');
+            },
+            getFiles() {
                 axios.get(API_PREFIX)
                     .then(response => {
                         this.files = response.data;
+                        for (var i = 0; i < this.files.length; i++) {
+                            files[i].canOpen = true;
+                        }
                     })
                     .catch(error => {
                         console.log(error);
                     });
             },
-            remove: function (name) {
+            remove(name) {
                 axios.delete(API_PREFIX + name)
                     .then(response => {
                         this.getFiles();

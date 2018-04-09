@@ -8,11 +8,20 @@ module.exports = {
         publicPath: '/dist',
         filename:'scripts.js'
     },
+    resolve: {
+        alias: {
+            vue: 'vue/dist/vue.js'
+        }
+    },
     module: {
         rules: [
             {
                 test: /\.vue$/,
                 loader: 'vue-loader'
+            },
+            {
+                test: /\.js$/,
+                loader: 'babel-loader'
             }
         ]
     },

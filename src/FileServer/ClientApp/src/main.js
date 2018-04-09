@@ -1,7 +1,12 @@
 ﻿import Vue from 'vue';
-import App from './components/app/App.vue';
+import App from './components/App.vue';
+import VModal from 'vue-js-modal'
 
+Vue.use(VModal)
+
+// ReSharper disable once ConstructorCallNotUsed
 new Vue({
     el: '#app',
-    render: h => h(App)
+    template: '<App/>',
+    components: { App }
 })

@@ -1,7 +1,19 @@
 ﻿<template>
     <div id="file-list">
         <div class="page-header">
-            <h1>Список файлов</h1>
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-6 float-left">
+                        <h1>Список файлов</h1>
+                    </div>
+                    <div class="col-md-3"></div>
+                    <div class="col-md-3">
+                        <div class="float-right">
+                            <upload v-on:onSuccess="onUploaded" />
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="panel">
             <table class="table table-striped">
@@ -9,16 +21,17 @@
                     <tr>
                         <td>Название</td>
                         <td>Дата изменения</td>
-                        <td>Размер</td>
+                        <td>Размер (Кбайт)</td>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="file in files">
                         <td>{{file.name}}</td>
-                        <td>{{file.lastModifiedDate}}</td>
-                        <td>{{file.lenght}}</td>
+                        <td>{{file.lastModifiedDate | formatDate}}</td>
+                        <td>{{file.length / 1000}}</td>
                         <td>
                             <button class="btn btn-sm btn-primary"
+                                    v-if="canOpen(file.name)"
                                     v-on:click="open(file.name)">
                                 Открыть
                             </button>
@@ -33,96 +46,79 @@
                 </tbody>
             </table>
         </div>
-        <modal name="file-view">
-            <div>
-                <h3>Hello</h3>
-                <img v-bind:src="image" v-show="image" />
-                <p v-show="text">{{text}}</p>
-            </div>
-        </modal>
+        <text-dialog />
+        <image-dialog />
+        <modals-container />
     </div>
 </template>
 
 <script>
     import axios from 'axios';
-    import Dialog from './Dialog.vue';
+    import ImageDialog from './ImageDialog.vue';
+    import TextDialog from './TextDialog.vue';
+    import fileService from '../services/FileService';
+    import Utils from '../utilites/Utils';
+    import Upload from './Upload.vue'
 
     const API_PREFIX = '/api/files/';
 
     export default {
         name: 'file-list',
+        components: { TextDialog, ImageDialog, Upload},
         data() {
             return {
-                files: [],
-                image: '',
-                text: ''
+                files: []
             }
         },
         created() {
             this.getFiles();
         },
+
         methods: {
             open(fileName) {
-
-                var isImage = false;
-                if (/\.(jpe?g|png|gif)$/i.test(fileName)) {
-                    this.text = '';
-                    isImage = true;
-                }
-                else if (/\.txt$/i.test(fileName)) {
-                    this.image = '';
-                } else {
-                    return; // other files
-                }
-
-                axios.get(API_PREFIX + fileName, {
-                    responseType: 'blob'
-                })
-                    .then(response => {
-                        var reader = new FileReader();
-                        reader.addEventListener("load", function () {
-                            if (isImage) {
-                                this.image = reader.result;
-                            }
-                            else {
-                                this.text = reader.result;
-                            }
-                        }.bind(this), false);
-
-                        if (response.data != null) {
-                            if (isImage)
-                                reader.readAsDataURL(response.data);
-                            else
-                                reader.readAsText(response.data, "UTF-8");
+                fileService.getFile(fileName)
+                    .then(data => {
+                        if (Utils.isImage(fileName)) {
+                            this.$modal.show('image-dialog', {
+                                fileName: fileName,
+                                image: data
+                            });
                         }
-
-                    })
-                    .catch(error => {
-                        console.log(error);
+                        else if (Utils.isText(fileName)) {
+                            this.$modal.show('text-dialog',
+                                {
+                                    fileName: fileName,
+                                    text: data
+                                });
+                        }
                     });
-
-                this.$modal.show('file-view');
             },
+
             getFiles() {
-                axios.get(API_PREFIX)
-                    .then(response => {
-                        this.files = response.data;
-                        for (var i = 0; i < this.files.length; i++) {
-                            files[i].canOpen = true;
-                        }
-                    })
-                    .catch(error => {
-                        console.log(error);
-                    });
+                fileService.getFiles()
+                    .then(data => this.files = data)
+                    .catch(error => console.log(error));
             },
+
             remove(name) {
-                axios.delete(API_PREFIX + name)
+
+                fileService.removeFile(name)
                     .then(response => {
                         this.getFiles();
                     })
                     .catch(error => {
                         console.log(error);
                     });
+            },
+
+            onUploaded(files) {
+                console.log('file name:' + files[0].name);
+                this.file = files[0];
+                this.getFiles();
+            },
+
+            canOpen(fileName) {
+                return Utils.isImage(fileName) || Utils.isText(fileName);
             }
         }
     }

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using FileServer.Models;
 using Microsoft.AspNetCore.Http;
 
@@ -30,7 +28,9 @@ namespace FileServer.Services
                     $"The file {fileName} already exists in the file storage.");
 
             using (var fileStream = new FileStream(fullName, FileMode.Create))
+            {
                 stream.CopyToAsync(fileStream);
+            }
 
             var fileInfo = new FileInfo(fullName);
 
@@ -56,14 +56,12 @@ namespace FileServer.Services
             var directory = new DirectoryInfo(directoryPath);
 
             foreach (var fileInfo in directory.GetFiles())
-            {
                 yield return new FileModel
                 {
                     Name = fileInfo.Name,
                     Length = fileInfo.Length,
                     LastModifiedDate = fileInfo.LastAccessTimeUtc
                 };
-            }
         }
 
         public FileModel Update(IFormFile file)
@@ -81,7 +79,7 @@ namespace FileServer.Services
 
             File.Delete(filePath);
 
-            return new FileModel { Name = fileInfo.Name};
+            return new FileModel {Name = fileInfo.Name};
         }
 
         string GetFullName(string fileName)

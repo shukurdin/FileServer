@@ -5,9 +5,6 @@ using Microsoft.Net.Http.Headers;
 
 namespace FileServer.Utilites
 {
-    // This method is similar to the example from Microsoft docs:
-    // github.com/aspnet/Docs/blob/master/aspnetcore/
-    // mvc/models/file-uploads/sample/FileUploadSample/MultipartRequestHelper.cs
     public static class MultipartRequestHelper
     {
         public static string GetBoundary(

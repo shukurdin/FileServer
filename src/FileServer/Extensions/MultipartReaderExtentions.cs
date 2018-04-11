@@ -7,7 +7,7 @@ namespace FileServer.Extensions
 {
     public static class MultipartReaderExtentions
     {
-        public static IEnumerable<MultipartSection> 
+        public static IEnumerable<MultipartSection>
             ReadFileContent(this MultipartReader reader)
         {
             var section = reader.ReadNextSectionAsync().Result;
@@ -16,12 +16,10 @@ namespace FileServer.Extensions
                 if (ContentDispositionHeaderValue
                     .TryParse(section.ContentDisposition,
                         out var contentDisposition))
-                {
                     if (MultipartRequestHelper
                         .HasFileContentDisposition(contentDisposition))
                         yield return section;
-                }
-                
+                // TODO: Invalid opration exception when already read
                 section = reader.ReadNextSectionAsync().Result;
             }
         }

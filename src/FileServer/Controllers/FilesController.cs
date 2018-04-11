@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using FileServer.Extensions;
 using FileServer.Filters;
 using FileServer.Models;
@@ -28,10 +29,14 @@ namespace FileServer.Controllers
             if (string.IsNullOrEmpty(file)) return BadRequest();
 
             new FileExtensionContentTypeProvider()
-                .TryGetContentType(file, out var contetnType);
+                .TryGetContentType(file, out var contentType);
 
-            return File(storage.Get(file),
-                contetnType ?? "application/octet-stream");
+            var storageFile = storage.Get(file);
+
+            if (storageFile == null) return NotFound();
+
+            return File(storageFile,
+                contentType ?? "application/octet-stream");
         }
 
         public IActionResult GetAll()
@@ -61,10 +66,16 @@ namespace FileServer.Controllers
             {
                 var fileName = MultipartRequestHelper
                     .ParseFileName(section.ContentDisposition);
+                try
+                {
+                    var addedFile = storage.Add(fileName, section.Body);
 
-                var addedFile = storage.Add(fileName, section.Body);
-
-                addedFiles.Add(addedFile);
+                    addedFiles.Add(addedFile);
+                }
+                catch (ArgumentException)
+                {
+                    return BadRequest();
+                }
             }
 
             return Json(addedFiles);

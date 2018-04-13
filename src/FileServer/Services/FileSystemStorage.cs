@@ -29,7 +29,7 @@ namespace FileServer.Services
 
             using (var fileStream = new FileStream(fullName, FileMode.Create))
             {
-                stream.CopyToAsync(fileStream);
+                stream.CopyTo(fileStream);
             }
 
             var fileInfo = new FileInfo(fullName);
